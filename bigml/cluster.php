@@ -14,53 +14,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-if (!class_exists('bigml')) {
-   include('bigml.php');
-}
+namespace BigML;
 
-if (!class_exists('modelfields')) {
-   include('modelfields.php');
-}
-if (!class_exists('centroid')) {
-   include('centroid.php');
-}
+use BigML\BigML;
+use BigML\ModelFields;
+use BigML\Centroid;
 
 define("OPTIONAL_FIELDS_CENTROID", json_encode(array('categorical', 'text','items','datetime')));
 define("GLOBAL_CLUSTER_LABEL", "Global");
-
-function parse_items($text, $regexp) {
-  /*Returns the list of parsed items*/
-  if (is_null($text)) {
-    return array();
-  }
-
-  $regex_string = "/". $regexp . "/";
-  return preg_split($regex_string, $text);
-
-}
-
-function parse_terms($text, $case_sensitive=true) {
-   /*
-      Returns the list of parsed terms
-   */
-   if ($text == null) {
-      return array();
-   }
-
-
-   preg_match_all("/(\b|_)([^\b_\s]+?)(\b|_)/u", $text, $matches);
-
-   $results = array();
-
-   if (!empty($matches[0])) {
-
-      foreach ($matches[0] as $valor) {
-        array_push($results, ($case_sensitive) ? $valor : strtolower($valor));
-      }
-
-   }
-   return $results;
-}
 
 function get_unique_terms($terms, $term_forms, $tag_cloud) {
   /*
@@ -236,7 +197,7 @@ class Cluster extends ModelFields {
          }
       }
       #Strips affixes for numeric values and casts to the final field type
-      $input_data = cast($input_data, $this->fields);
+      $input_data = self::cast($input_data, $this->fields);
       $unique_terms = array();
       $get_unique = $this->get_unique_terms($input_data);
       $unique_terms = $get_unique[0];
@@ -323,6 +284,36 @@ class Cluster extends ModelFields {
       return array($unique_terms,$input_data);
    }
 
+    static function parse_items($text, $regexp)
+    {
+        /*Returns the list of parsed items*/
+        if (is_null($text)) {
+            return array();
+        }
+
+        $regex_string = "/". $regexp . "/";
+        return preg_split($regex_string, $text);
+    }
+
+    static function parse_terms($text, $case_sensitive=true)
+    {
+        /*
+        Returns the list of parsed terms
+        */
+        if ($text == null) {
+            return [];
+        }
+
+        preg_match_all("/(\b|_)([^\b_\s]+?)(\b|_)/u", $text, $matches);
+
+        $results = [];
+        if (!empty($matches[0])) {
+            foreach ($matches[0] as $valor) {
+                array_push($results, ($case_sensitive) ? $valor : strtolower($valor));
+            }
+        }
+        return $results;
+    }
 }
 
 ?>

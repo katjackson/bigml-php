@@ -14,6 +14,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+namespace BigML;
+
+use Exception;
+use StdClass;
+
 /*
    A BasicModel resource.
    This module defines a BasicModel to hold the main information of the model

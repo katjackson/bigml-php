@@ -14,77 +14,16 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+namespace BigML;
+
+use Exception;
+use StdClass;
 /*
    A BasicModel resource.
    This module defines a BasicModel to hold the main information of the model
    resource in BigML. It becomes the starting point for the Model class, that
    is used for local predictions.
 */
-
-function strip_affixes($value, $field) 
-{
-   /*
-      Strips prefixes and suffixes if present
-   */
-   if (!mb_check_encoding($value,"UTF-8")) {
-      $value = mb_convert_encoding($value, "UTF-8");
-   }
-
-   if (array_key_exists('prefix', $field) && substr( $field->prefix, 0, 6 ) === "prefix") {
-      $value=substr($value, 6);
-   }
-
-   if (array_key_exists('suffix', $field) && endsWith($field->suffix, "suffix")) {
-      $value=substr($value, 0, -6);
-   }
-
-   return $value;
-
-}
-
-function cast($input_data, $fields) {
-   /*
-      Checks expected type in input data values, strips affixes and casts
-   */
-   foreach($input_data as $key => $value) {
-      if ($fields->{$key}->optype == 'categorical' &&  
-         count($fields->{$key}->summary->categories) == 2 && (is_bool($value))) {# || in_array($value, array(0,1)))) {
-         try {
-	   $booleans = array();
-	   $categories = array();
-           foreach ($fields->{$key}->summary->categories as $index => $v) {
-	      array_push($categories, $v[0]);
-	   }
-           foreach ($categories as $category) {
-              $bool_key =  in_array(trim(strtolower($category)), array("true", "1")) ? '1' : '0'; 
-	      $booleans[$bool_key] = $category; 
-           }
-           # converting boolean to the corresponding string	   
-	   $input_data[$key] = $booleans[strval($value)];
-
-	 } catch  (Exception $e) {
-	   throw new Exception("Mismatch input data type in field \"". $fields->{$key}->name . 
-	                        "\" for value " . json_encode($value) . ". String expected");
-	 }
-
-      } else if ( ($fields->{$key}->optype == 'numeric' && is_string($value)) || 
-          ($fields->{$key}->optype != 'numeric' && !is_string($value))) {
-
-         if ($fields->{$key}->optype == 'numeric') {
-            $value = strip_affixes($value, $fields->{$key});
-            if ($fields->{$key}->optype == "numeric") {
-               $input_data[$key] = floatval($value); 
-            } else {
-               $input_data[$key] = utf8_encode($value);
-            }
-         } 
-      } else if ($fields->{$key}->optype == 'numeric' && is_bool($value) ) {
-          throw new Exception("Mismatch input data type in field \"". $fields->{$key}->name .
-	                       "\" for value " . json_encode($value) . ". Numeric expected");
-      }
-   }
-   return $input_data;
-}
 
 function extract_objective($objective_field) {
      /*
@@ -121,12 +60,12 @@ function invert_dictionary($dictionary, $field='name') {
          if (!mb_detect_encoding($field_value, 'UTF-8', true)) {
             $field = utf8_encode($field_value);
 	 }
-         $new_dictionary[strval($field_value)] = $key; 
+         $new_dictionary[strval($field_value)] = $key;
      }
-     return $new_dictionary;     
+     return $new_dictionary;
  }
 
-class ModelFields { 
+class ModelFields {
    /*
       A lightweight wrapper of the field information in the model or cluster
         objects
@@ -287,6 +226,72 @@ class ModelFields {
       return ($var != null);
    }
 
+    static function endsWith($str, $sub) {
+        return (substr($str, strlen($str) - strlen($sub)) == $sub);
+    }
+
+    static function strip_affixes($value, $field)
+    {
+        /*
+        Strips prefixes and suffixes if present
+        */
+        if (!mb_check_encoding($value,"UTF-8")) {
+            $value = mb_convert_encoding($value, "UTF-8");
+        }
+
+        if (array_key_exists('prefix', $field) && substr($field->prefix, 0, 6) === "prefix") {
+            $value=substr($value, 6);
+        }
+
+        if (array_key_exists('suffix', $field) && self::endsWith($field->suffix, "suffix")) {
+            $value=substr($value, 0, -6);
+        }
+
+        return $value;
+
+    }
+
+    static function cast($input_data, $fields)
+    {
+        /*
+         Checks expected type in input data values, strips affixes and casts
+        */
+        foreach($input_data as $key => $value) {
+            if ($fields->{$key}->optype == 'categorical'
+                && count($fields->{$key}->summary->categories) == 2 && (is_bool($value))
+            ) {
+                try {
+                    $booleans = array();
+                    $categories = array();
+                    foreach ($fields->{$key}->summary->categories as $index => $v) {
+                        array_push($categories, $v[0]);
+                    }
+                    foreach ($categories as $category) {
+                        $bool_key =  in_array(trim(strtolower($category)), array("true", "1")) ? '1' : '0';
+                        $booleans[$bool_key] = $category;
+                    }
+                    # converting boolean to the corresponding string
+                    $input_data[$key] = $booleans[strval($value)];
+                } catch  (Exception $e) {
+                    throw new Exception("Mismatch input data type in field \"". $fields->{$key}->name . "\" for value " . json_encode($value) . ". String expected");
+                }
+            } elseif (($fields->{$key}->optype == 'numeric' && is_string($value))
+                       || ($fields->{$key}->optype != 'numeric' && !is_string($value))
+            ) {
+                if ($fields->{$key}->optype == 'numeric') {
+                    $value = self::strip_affixes($value, $fields->{$key});
+                    if ($fields->{$key}->optype == "numeric") {
+                        $input_data[$key] = floatval($value);
+                    } else {
+                        $input_data[$key] = utf8_encode($value);
+                    }
+                }
+            } elseif ($fields->{$key}->optype == 'numeric' && is_bool($value)) {
+                throw new Exception("Mismatch input data type in field \"". $fields->{$key}->name . "\" for value " . json_encode($value) . ". Numeric expected");
+            }
+        }
+        return $input_data;
+    }
 }
 
 function isAssoc($arr)

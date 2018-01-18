@@ -17,21 +17,15 @@
 
 # Tree structure for the BigML local boosted Model
 
-# This module defines an auxiliary Tree structure that is used in the local 
-# boosted Ensemble to predict locally or embedded into your application 
+# This module defines an auxiliary Tree structure that is used in the local
+# boosted Ensemble to predict locally or embedded into your application
 # without needing to send requests to BigML.io.
 
-if (!class_exists('Predicate')) {
-   include('predicate.php'); 
-}
+namespace BigML;
 
-if (!class_exists('Prediction')) {
-   include('prediction.php'); 
-}
-
-if (!class_exists('Tree')) {
-   include('tree.php');
-}
+use BigML\Predicate;
+use BigML\Prediction;
+use BigML\Tree;
 
 class BoostedTree {
         /*
@@ -153,7 +147,7 @@ class BoostedTree {
                 $b = ($child_type == 'text' OR $child_type == 'items');
             }
 
-            if (one_branch($this->children, $input_data) OR $b) {
+            if (Tree::one_branch($this->children, $input_data) OR $b) {
                 foreach ($this->children as $child) {
                     if ($child->predicate->apply($input_data, $this->fields)) {
                         $new_rule = $child->predicate->to_rule($this->fields);

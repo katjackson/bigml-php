@@ -14,21 +14,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-if (!class_exists('predicate')) {
-   include('predicate.php'); 
-}
+namespace BigML;
 
-if (!class_exists('multivote')) {
-   include('multivote.php'); 
-}
-
-if (!class_exists('ChiSquare')) {
-   include('ChiSquare.php'); 
-}
-
-if (!class_exists('Prediction')) {
-   include('prediction.php');
-}
+use BigML\Predicate;
+use BigML\MultiVote;
+use BigML\ChiSquare;
+use BigML\Prediction;
+use StdClass;
 
 function get_instances($distribution) {
    /*
@@ -116,28 +108,23 @@ function mean($distribution) {
    foreach($distribution as $value) {
       $addition += $value[0] * $value[1];
       $count += $value[1];
-   }   
+   }
 
    if ($count > 0) {
       return $addition/$count;
    }
 
-   return NAN; 
+   return NAN;
 
 }
 
-function missing_brach($children) {
-   /*
-     Checks if the missing values are assigned to a special branch
-   */
-   foreach($children as $child) {
-      $predicate = $child->predicate;
-      if ($predicate->missing == true) {
-         return true;
-      }
-   }
-
-   return false;
+function missing_branch($children) {
+    foreach ($children as $child) {
+        if ($child->predicate->missing){
+            return true;
+        }
+    }
+    return false;
 }
 
 function null_value($children) {
@@ -153,15 +140,6 @@ function null_value($children) {
    }
 
    return false;
-}
-
-function one_branch($children, $input_data) {
-   /*
-    Check if there's only one branch to be followed
-    */
-   $missing = array_key_exists(splitChildren($children), $input_data); 
-
-   return ($missing || missing_branch($children) || null_value($children));
 }
 
 class Tree {
@@ -418,16 +396,16 @@ class Tree {
             foreach ($final_distribution as $key => $val) {
                 array_push($distribution, array(floatval($key), $val));
             }
-             
+
             $distribution_unit = 'counts';
             if (count($distribution) > Tree::BINS_LIMIT) {
                $distribution_unit = 'bins';
             }
-            $distribution = merge_bins($distribution, Tree::BINS_LIMIT);
+            $distribution = MultiVote::merge_bins($distribution, Tree::BINS_LIMIT);
             $prediction = mean($distribution);
             $total_instances = 0;
 
-            foreach ($distribution as $key => $val) { 
+            foreach ($distribution as $key => $val) {
                 $total_instances+=$val[1];
             }
 
@@ -497,17 +475,17 @@ class Tree {
       $final_distribution = array();
 
       if ($this->children == null) {
-         $distribution = !$this->weighted ? $this->distribution : $this->weighted_distribution; 
+         $distribution = !$this->weighted ? $this->distribution : $this->weighted_distribution;
 
-         $a = array(); 
+         $a = array();
          foreach($distribution as $x) {
             $a[strval($x[0])] = $x[1];
          }
 
-         return array(merge_distributions(array(), $a), $this->min, $this->max, $this, $this->count);
+         return array(MultiVote::merge_distributions(array(), $a), $this->min, $this->max, $this, $this->count);
       }
 
-      if ( one_branch($this->children, $input_data) || in_array($this->fields->{splitChildren($this->children)}->optype, array("text", "items")) ) {
+      if ( self::one_branch($this->children, $input_data) || in_array($this->fields->{splitChildren($this->children)}->optype, array("text", "items")) ) {
          foreach($this->children as $child) {
             $predicate = $child->predicate;
 
@@ -518,7 +496,7 @@ class Tree {
                }
                return $child->predict_proportional($input_data, $path, $missing_found, $median);
             }
- 
+
          }
       } else {
          $missing_found = true;
@@ -534,16 +512,16 @@ class Tree {
 	    $subtree_pop = $predict_pro[4];
 
             if ($subtree_min != null) {
-               array_push($minimus, $subtree_min); 
+               array_push($minimus, $subtree_min);
             }
             if ($subtree_max != null) {
-               array_push($maximus, $subtree_max); 
+               array_push($maximus, $subtree_max);
             }
-            
+
 	    $population += $subtree_pop;
-            $final_distribution = merge_distributions($final_distribution, $subtree_distribution);
+            $final_distribution = MultiVote::merge_distributions($final_distribution, $subtree_distribution);
          }
-         
+
          $min_value = null;
          $max_value  = null;
 
@@ -669,12 +647,22 @@ class Tree {
             array_push($fathers, array($value, $child));
          }
       }
-      
+
       return $fathers;
    }
+
+    static function one_branch($children, $input_data)
+    {
+        /*
+        Check if there's only one branch to be followed
+        */
+        $missing = array_key_exists(splitChildren($children), $input_data);
+
+        return ($missing || missing_branch($children) || null_value($children));
+    }
 }
 
-function filter_nodes($node_list, $ids=null, $subtree=true) 
+function filter_nodes($node_list, $ids=null, $subtree=true)
 {
    /*
       Filters the contents of a nodes_list. If any of the nodes is in the
@@ -699,16 +687,7 @@ function filter_nodes($node_list, $ids=null, $subtree=true)
    return $nodes;
 }
 
-function missing_branch($children) {
-  foreach($children  as $child) {
-     if ($child->predicate->missing){
-        return true;
-     }
-  }
-  return false;
-}
-
-function dist_median($distribution, $count) 
+function dist_median($distribution, $count)
 {
   /*
     "Returns the median value for a distribution
@@ -727,31 +706,6 @@ function dist_median($distribution, $count)
        }
        $previous_value=$value[0];
    }
-   return null; 
+   return null;
 }
-
-function erf($x) {
-    # constants
-    $a1 =  0.254829592;
-    $a2 = -0.284496736;
-    $a3 =  1.421413741;
-    $a4 = -1.453152027;
-    $a5 =  1.061405429;
-    $p  =  0.3275911;
-
-    # Save the sign of x
-    $sign = 1;
-    if ($x < 0) {
-        $sign = -1;
-    }
-    $x = abs($x);
-
-    # A&S formula 7.1.26
-    $t = 1.0/(1.0 + $p*$x);
-    $y = 1.0 - ((((($a5*$t + $a4)*$t) + $a3)*$t + $a2)*$t + $a1)*$t*exp(-$x*$x);
-
-    return $sign*$y;
-}
-
-
 ?>

@@ -14,27 +14,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-if (!class_exists('modelfields')) {
-   include('modelfields.php');
-}
+namespace BigML;
 
-function print_importance($instance, $out=STDOUT) {
-   /*
-     Print a field importance structure
-   */
-   $count=1;
-   $data = $instance->field_importance_data();
-   $field_importance = $data[0];
-   $fields = $data[1];
-
-   foreach($field_importance as $item) {
-     $field = $item[0];
-     $importance = $item[1];
-     fwrite($out,"    " . $count . ". " .  $fields->{$field}->name . ": " . number_format(strval(round($importance, 4, PHP_ROUND_HALF_UP)*100), 2)  . "%\n");
-     fflush($out);
-     $count+=1; 
-   }   
-}
+use BigML\ModelFields;
+use Exception;
+use StdClass;
 
 class BaseModel extends ModelFields{
    /*
@@ -77,17 +61,18 @@ class BaseModel extends ModelFields{
          if ($api == null) {
              $api = new BigML(null, null, null, $storage);
          }
- 
-         if (is_string($model)) {                                
+
+         if (is_string($model)) {
             if (!($api::_checkModelId($model)) ) {
                error_log("Wrong model id");
                return null;
             }
             $model = $api::retrieve_resource($model, $api::ONLY_MODEL);
+            $this->resource_id = $model->resource;
          } 
 
-      } 
-         
+      }
+
       if (property_exists($model, "object") && $model->object instanceof STDClass) {
          $model=$model->object;
       }
@@ -190,17 +175,27 @@ class BaseModel extends ModelFields{
     function field_importance_data() {
        /*
         Returns field importance related info
-       */ 
+       */
        return array($this->field_importance, $this->fields);
     }
 
     function print_importance($out=STDOUT) {
-       /*
-        Prints the importance data
-       */
-       print_importance($out);
-    }
+        /*
+          Print a field importance structure
+        */
+        $count=1;
+        $data = $this->field_importance_data();
+        $field_importance = $data[0];
+        $fields = $data[1];
 
+        foreach ($field_importance as $item) {
+            $field = $item[0];
+            $importance = $item[1];
+            fwrite($out, "    " . $count . ". " .  $fields->{$field}->name . ": " . number_format(strval(round($importance, 4, PHP_ROUND_HALF_UP) * 100), 2)  . "%\n");
+            fflush($out);
+            $count += 1;
+        }
+    }
 }
 
 ?>

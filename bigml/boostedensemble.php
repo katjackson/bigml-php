@@ -14,17 +14,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-if (!class_exists('bigml')) {
-   include('bigml.php');
-}
+namespace BigML;
 
-if (!class_exists('model')) {
-   include('model.php');
-}
-
-if (!class_exists('BoostedTree')) {
-    include('boostedtree.php');
-}
+use BigML\BigML;
+use BigML\Model;
+use BigML\BoostedTree;
+use StdClass;
 
 class BoostedEnsemble extends ModelFields{
    /*
@@ -96,7 +91,7 @@ class BoostedEnsemble extends ModelFields{
        $filtered_data = $this->filter_input_data($input_data, $by_name);
 
        // Strips affixes for numeric values and casts to the final field type
-       $new_data = cast($filtered_data, $this->fields);
+       $new_data = self::cast($filtered_data, $this->fields);
 
        if ($this->regression) {
 

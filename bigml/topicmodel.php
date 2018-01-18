@@ -14,16 +14,24 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-/* A local Predictive Topic Model.  
+namespace BigML;
+
+use BigML\BigML;
+use BigML\BaseModel;
+use BigML\ModelFields;
+use Exception;
+use StdClass;
+
+/* A local Predictive Topic Model.
 
  This module allows you to download and use Topic models for local
  predicitons.  Specifically, the function topic_model.distribution
  allows you to pass in input text and infers a generative distribution
- over the topics in the learned topic model.  
+ over the topics in the learned topic model.
 
  Example usage (assuming that you have previously set up the
  BIGML_USERNAME and BIGML_API_KEY environment variables and that you
- own the topicmodel/id below): 
+ own the topicmodel/id below):
 
  if (!class_exists('bigml')) {
    include '../bigml/bigml.php';
@@ -33,22 +41,10 @@
    include '../bigml/topicmodel.php';
  }
 
- $api = new BigML(); 
- $topic_model = new TopicModel('topicmodel/5026965515526876630001b2'); 
+ $api = new BigML();
+ $topic_model = new TopicModel('topicmodel/5026965515526876630001b2');
  $topic_distribution = topic_model.distribution({"text": "A sample string"}));
 */
-
-if (!class_exists('bigml')) {
-   include('bigml.php');
-}
-
-if (!class_exists('basemodel')) {
-  include('basemodel.php');
-}
-
-if (!class_exists('modelfields')) {
-  include('modelfields.php');
-}
 
 require_once '../vendor/autoload.php';
 

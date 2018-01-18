@@ -1,9 +1,14 @@
 {
-  "name": "bigml/bigml-php",
+  "name": "katjackson/bigml-php",
   "type": "library",
-  "description": "API bindings for BigML",
+  "description": "Namespaced PHP API bindings for BigML",
   "license": "Apache-2.0",
   "require": {
     "wamania/php-stemmer": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "BigML\\": "bigml/"
+    }
   }
 }

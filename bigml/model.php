@@ -14,18 +14,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-if (!class_exists('bigml')) {
-   include('bigml.php');
-}
-if (!class_exists('basemodel')) {
-  include('basemodel.php');
-}
-if (!class_exists('tree')) {
-   include('tree.php');
-}
-if (!class_exists('path')) {
-   include('path.php');
-}
+namespace BigML;
+
+use BigML\BigML;
+use BigML\BaseModel;
+use BigML\MultiVote;
+use BigML\Tree;
+use BigML\Path;
+use Exception;
+use StdClass;
 
 if(!defined('STDOUT')) define('STDOUT', fopen('php://stdout', 'w'));
 
@@ -206,7 +203,7 @@ class Model extends BaseModel{
 
 
       # Strips affixes for numeric values and casts to the final field type
-      $input_data = cast($input_data, $this->fields);
+      $input_data = self::cast($input_data, $this->fields);
 
       $prediction = $tree->predict($input_data, null, $missing_strategy);
 
@@ -235,7 +232,7 @@ class Model extends BaseModel{
 	       ( is_int($multiple) && $index < $multiple  ) ) {
 
                $prediction_dict = array('prediction' => $category,
-	                                'confidence' => ws_confidence($category, $prediction->distribution),
+	                                'confidence' => MultiVote::ws_confidence($category, $prediction->distribution),
 		                        'probability' => $instances / $total_instances,
 		                        'count' => $instances);
 
@@ -393,10 +390,10 @@ class Model extends BaseModel{
         //  confidence value is a lower confidence bound on the predicted
         //  probability of the given class.  The input fields must be a
         //  dictionary keyed by field name for field ID.
- 
+
         //  For regressions, the output is a single element list
         // containing the prediction.
- 
+
         //  :param input_data: Input data to be predicted
         //  :param by_name: Boolean that is set to True if field_names (as
         //                  alternative to field ids) are used in the
@@ -419,7 +416,7 @@ class Model extends BaseModel{
 
       foreach ($distribution as $class_info) {
           $name = $class_info[0];
-          $category_map[$name] = ws_confidence($name, $distribution);
+          $category_map[$name] = MultiVote::ws_confidence($name, $distribution);
       }
 
       return $this->to_output($category_map, $compact, "confidence");
@@ -734,7 +731,7 @@ class Model extends BaseModel{
 
       if ($this->field_importance) {
          fwrite($out, "Field importance:\n");
-         print_importance($this, $out);
+         $this->print_importance($out);
       }
 
       $groups = $this->extract_common_path($groups);

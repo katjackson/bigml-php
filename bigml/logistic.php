@@ -14,21 +14,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-if (!class_exists('bigml')) {
-   include('bigml.php');
-}
+namespace BigML;
 
-if (!class_exists('modelfields')) {
-  include('modelfields.php');
-}
-
-if (!class_exists('predicate')) {
-  include('predicate.php');
-}
-
-if (!class_exists('cluster')) {
-  include('cluster.php');
-}
+use BigML\BigML;
+use BigML\ModelFields;
+use BigML\Predicate;
+use BigML\Cluster;
+use Exception;
+use StdClass;
 
 define("EXPANSION_ATTRIBUTES", json_encode(array("categorical" => "categories",
                                                  "text" => "tag_cloud",
@@ -329,7 +322,7 @@ class LogisticRegression extends ModelFields {
       }
 
       #Strips affixes for numeric values and casts to the final field type
-      cast($input_data, $this->fields);
+      self::cast($input_data, $this->fields);
 
       if (!is_null($this->balance_fields) && $this->balance_fields) {
 
@@ -536,7 +529,7 @@ class LogisticRegression extends ModelFields {
                $token_mode = (array_key_exists('token_mode', $this->term_analysis[$field_id])) ? $this->term_analysis[$field_id]->token_mode : 'all';
 
                if ($token_mode != Predicate::TM_FULL_TERM) {
-                  $terms = parse_terms($input_data_field, $case_sensitive);
+                  $terms = Cluster::parse_terms($input_data_field, $case_sensitive);
                } else {
                   $terms = array();
                }
@@ -570,8 +563,8 @@ class LogisticRegression extends ModelFields {
                   $regexp='' . preg_quote($separator);
                }
 
-               $terms = parse_items($input_data_field, $regexp);
-                $unique_terms[$field_id] = get_unique_terms($terms,
+               $terms = Cluster::parse_items($input_data_field, $regexp);
+                $unique_terms[$field_id] = logistic_get_unique_terms($terms,
                                                             array(),
                                                           array_key_exists($field_id, $this->items) ? $this->items[$field_id] : array());
             } else {

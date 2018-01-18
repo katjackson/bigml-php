@@ -13,117 +13,20 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
+namespace BigML;
+
+use Exception;
+use StdClass;
+
 function is_assoc($array){
     return !ctype_digit( implode('', array_keys($array)) );
-}
-
-function ws_confidence($prediction, $distribution, $ws_z=1.96, $ws_n=null) {
-   /*
-      Wilson score interval computation of the distribution for the prediction
-      expected arguments:
-         prediction: the value of the prediction for which confidence is computed
-         distribution: a distribution-like structure of predictions and the associated weights. (e.g.
-                   array(('Iris-setosa', 10), ('Iris-versicolor', 5))
-
-         ws_z: percentile of the standard normal distribution
-         ws_n: total number of instances in the distribution. If absent, the number is computed as the sum of weights in the
-              provided distribution
-   */
-   if (!is_assoc($distribution)) {
-      $new_distribution = array();
-      foreach($distribution as $item) { 
-         $new_distribution[$item[0]]=$item[1];
-      }
-      $distribution = $new_distribution;
-   }
-
-   $ws_p = $distribution[$prediction];
-   if ($ws_p < 0)
-   {
-      throw new Exception("The distribution weight must be a positive value");
-   }
-
-   $ws_norm = floatval(array_sum($distribution));
-
-   if ($ws_norm != 1.0) {
-      $ws_p = $ws_p/$ws_norm;
-   }
-
-   if ($ws_n == null) {
-      $ws_n = $ws_norm;
-   } else {
-      $ws_n = floatval($ws_n);
-   }
-
-   if ($ws_n < 1) {
-      throw new Exception("The total of instances in the distribution must be a positive integer");
-   }
-
-   $ws_z = floatval($ws_z);
-   $ws_z2 = $ws_z * $ws_z;
-   $ws_factor = floatval($ws_z2)/floatval($ws_n);
-   $ws_sqrt = sqrt( ( ($ws_p * (1.0-$ws_p)) + ($ws_factor/4.0) )/$ws_n  );
-
-   return ($ws_p + ($ws_factor/2) - ($ws_z*$ws_sqrt) )/(1+$ws_factor);
-
-}
-
-function merge_distributions($distribution, $new_distribution)
-{
-   /*
-     Adds up a new distribution structure to a map formatted distribution
-   */
-   foreach($new_distribution as $key => $value)
-   {
-      if (!array_key_exists($key, $distribution) )  {
-            $distribution[$key] = 0;
-      }
-       $distribution[$key] += $value;
-
-   }
-
-   return $distribution;
-
-}
-
-function merge_bins($distribution, $limit) {
-   /*
-      Merges the bins of a regression distribution to the given limit number
-   */
-   $length = count($distribution);
-   if ($limit < 1 || $length <= $limit || $length < 2) {
-      return $distribution;
-   }
-
-   $index_to_merge = 2;
-   $shortest = INF;
-
-   foreach (range(1, $length-1) as $index) {
-      $distance = floatval($distribution[$index][0])-floatval($distribution[$index-1][0]);
-
-      if (floatval($distance) < floatval($shortest)) {
-         $shortest=$distance;
-         $index_to_merge = $index;
-      }
-   }
-
-   $new_distribution = array_slice($distribution, 0, ($index_to_merge-1));
-   $left = $distribution[$index_to_merge-1];
-   $right = $distribution[$index_to_merge];
-   $new_bin = array((($left[0]*$left[1]) + ($right[0] * $right[1]) )/($left[1]+$right[1]), $left[1]+$right[1]);
-   array_push($new_distribution, $new_bin);
-
-   if ($index_to_merge < ($length - 1)) {
-       $new_distribution = array_merge($new_distribution, array_slice($distribution, ($index_to_merge+1)));
-   }
-
-   return merge_bins($new_distribution, $limit);
 }
 
 class MultiVote {
    /*
       A multiple vote prediction
-      Uses a number of predictions to generate a combined prediction.   
+      Uses a number of predictions to generate a combined prediction.
    */
 
    const PLURALITY = 'plurality';
@@ -219,14 +122,14 @@ class MultiVote {
 
      foreach($this->predictions as $prediction) {
 
-        $joined_distribution = merge_distributions($joined_distribution, 
-	                                           array($prediction['distribution'][0], 
+        $joined_distribution = self::merge_distributions($joined_distribution,
+	                                           array($prediction['distribution'][0],
 						         $prediction['distribution'][1]));
 
         uasort($joined_distribution, array($this, "sort_joined_distribution_items"));
         $distribution = array();
         foreach($joined_distribution as $dis) {
-           array_push($distribution, array($dis)); 
+           array_push($distribution, array($dis));
         }
 
         if ($distribution_unit == 'counts') {
@@ -771,13 +674,13 @@ class MultiVote {
             $combined_distribution = $this->combine_distribution();
             $distribution = $combined_distribution[0];
             $count = $combined_distribution[1];
-            $combined_confidence = ws_confidence($prediction, $distribution, 1.96, $count); 
+            $combined_confidence = self::ws_confidence($prediction, $distribution, 1.96, $count);
          }
 
       }
- 
+
       if ($with_confidence) {
-         return array($prediction, $combined_confidence); 
+         return array($prediction, $combined_confidence);
       }
 
       if ($add_confidence or $add_distribution or $add_count) {
@@ -959,8 +862,107 @@ class MultiVote {
       } else {
         error_log("WARNING: failed to add the prediction.\n The row must have label 'prediction' at least.");
       }
- 
+
    }
 
+    static function ws_confidence($prediction, $distribution, $ws_z=1.96, $ws_n=null) {
+        /*
+         Wilson score interval computation of the distribution for the prediction
+         expected arguments:
+            prediction: the value of the prediction for which confidence is computed
+            distribution: a distribution-like structure of predictions and the associated weights. (e.g.
+                array(('Iris-setosa', 10), ('Iris-versicolor', 5))
+            ws_z: percentile of the standard normal distribution
+            ws_n: total number of instances in the distribution. If absent, the number is computed as the sum of
+                weights in the provided distribution
+        */
+        if (!is_assoc($distribution)) {
+            $new_distribution = array();
+            foreach($distribution as $item) {
+                $new_distribution[$item[0]]=$item[1];
+            }
+            $distribution = $new_distribution;
+        }
+
+        $ws_p = $distribution[$prediction];
+        if ($ws_p < 0) {
+            throw new Exception("The distribution weight must be a positive value");
+        }
+
+        $ws_norm = floatval(array_sum($distribution));
+
+        if ($ws_norm != 1.0) {
+            $ws_p = $ws_p/$ws_norm;
+        }
+
+        if ($ws_n == null) {
+            $ws_n = $ws_norm;
+        } else {
+            $ws_n = floatval($ws_n);
+        }
+
+        if ($ws_n < 1) {
+            throw new Exception("The total of instances in the distribution must be a positive integer");
+        }
+
+        $ws_z = floatval($ws_z);
+        $ws_z2 = $ws_z * $ws_z;
+        $ws_factor = floatval($ws_z2)/floatval($ws_n);
+        $ws_sqrt = sqrt( ( ($ws_p * (1.0-$ws_p)) + ($ws_factor/4.0) )/$ws_n  );
+
+        return ($ws_p + ($ws_factor/2) - ($ws_z*$ws_sqrt) )/(1+$ws_factor);
+    }
+
+    static function merge_distributions($distribution, $new_distribution)
+    {
+        /*
+        Adds up a new distribution structure to a map formatted distribution
+        */
+        foreach ($new_distribution as $key => $value) {
+            if (!array_key_exists($key, $distribution)) {
+                $distribution[$key] = 0;
+            }
+            $distribution[$key] += $value;
+        }
+        return $distribution;
+    }
+
+    static function merge_bins($distribution, $limit)
+    {
+        /*
+          Merges the bins of a regression distribution to the given limit number
+        */
+        $length = count($distribution);
+        if ($limit < 1 || $length <= $limit || $length < 2) {
+            return $distribution;
+        }
+
+        $index_to_merge = 2;
+        $shortest = INF;
+
+        foreach (range(1, $length-1) as $index) {
+            $distance = floatval($distribution[$index][0]) - floatval($distribution[$index - 1][0]);
+
+            if (floatval($distance) < floatval($shortest)) {
+                $shortest = $distance;
+                $index_to_merge = $index;
+            }
+        }
+
+        $new_distribution = array_slice($distribution, 0, ($index_to_merge - 1));
+        $left = $distribution[$index_to_merge - 1];
+        $right = $distribution[$index_to_merge];
+        $new_bin = [
+            (($left[0] * $left[1]) + ($right[0] * $right[1])) / ($left[1] + $right[1]),
+            $left[1] + $right[1]
+        ];
+        array_push($new_distribution, $new_bin);
+
+        if ($index_to_merge < ($length - 1)) {
+            $new_distribution = array_merge($new_distribution, array_slice($distribution, ($index_to_merge + 1)));
+        }
+
+        return self::merge_bins($new_distribution, $limit);
+    }
 }
 ?>

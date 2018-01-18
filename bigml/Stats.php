@@ -1,9 +1,11 @@
 <?php
 
+namespace BigML;
+
 /**
  * Stats class
- * 
- * Static class containing a variety of useful statistical functions.  
+ *
+ * Static class containing a variety of useful statistical functions.
  * Fills in where PHP's math functions fall short.  Many functions are
  * used extensively by the probability distributions.
  */

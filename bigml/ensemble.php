@@ -14,29 +14,16 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-if (!class_exists('bigml')) {
-   include('bigml.php');
-}
+namespace BigML;
 
-if (!class_exists('multimodel')) {
-  include('multimodel.php');
-}
-
-if (!class_exists('multivote')) {
-  include('multivote.php');
-}
-
-if (!class_exists('BoostedEnsemble')) {
-  include('boostedensemble.php');
-}
-
-if (!class_exists('model')) {
-  include('model.php');
-}
-
-if (!class_exists('basemodel')) {
-  include('basemodel.php');
-}
+use BigML\BigML;
+use BigML\MultiModel;
+use BigML\MultiVote;
+use BigML\BoostedEnsemble;
+use BigML\Model;
+use BigML\BaseModel;
+use Exception;
+use StdClass;
 
 class Ensemble {
    /*

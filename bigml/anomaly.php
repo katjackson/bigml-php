@@ -14,18 +14,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+namespace BigML;
 
-if (!class_exists('bigml')) {
-   include('bigml.php');
-}
-
-if (!class_exists('modelfields')) {
-   include('modelfields.php');
-}
-
-if (!class_exists('anomalytree')) {
-   include('anomalytree.php');
-}
+use BigML\BigML;
+use BigML\ModelFields;
+use BigML\AnomalyTree;
+use StdClass;
 
 /*
 
@@ -140,7 +134,7 @@ class Anomaly extends ModelFields {
       //Checks and cleans input_data leaving the fields used in the model
       $input_data = $this->filter_input_data($input_data, $by_name);
       // Strips affixes for numeric values and casts to the final field type
-      $input_data = cast($input_data, $this->fields);
+      $input_data = self::cast($input_data, $this->fields);
 
       $depth_sum = 0;
 

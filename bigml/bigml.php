@@ -14,15 +14,20 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+namespace BigML;
+
+use Exception;
+use StdClass;
+
 # BigML.io PHP bindings.
 
 # This is a simple binding to BigML.io, the BigML API.
 
 class BigML {
    const BIGML_ENDPOINT = "https://bigml.io";
-   const ONLY_MODEL = "only_model=true;limit=-1;"; 
+   const ONLY_MODEL = "only_model=true;limit=-1;";
    /**
-      * The BigML Access Username 
+      * The BigML Access Username
       *
       * @var string
       * @access private

@@ -1,9 +1,13 @@
 <?php
-include('ProbabilityDistribution.php');
-include('Stats.php');
+
+namespace BigML;
+
+use BigML\ProbabilityDistribution;
+use BigML\Stats;
+
 /**
  * ChiSquare class
- * 
+ *
  * Represents the Chi Square distribution, a distribution that represents the
  * sum of the squares of k independent standard normal random variates.
  *

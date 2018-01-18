@@ -14,21 +14,18 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-if (!class_exists('modelfields')) {
-   include('modelfields.php');
-}   
-if (!class_exists('item')) {
-   include('item.php');
-}   
-if (!class_exists('associationrule')) {
-   include('associationrule.php');
-}   
+namespace BigML;
+
+use BigML\ModelFields;
+use BigML\Item;
+use BigML\AssociationRule;
+use StdClass;
 
 define("NO_ITEMS", json_encode(array('numeric', 'categorical')));
-#define("SEARCH_STRATEGY_ATTRIBUTES", json_encode(array(0 =>  "leverage", 
-#                                                       1 => "confidence", 
-#						       2 => "support", 
-#						       3 => "lhs_coverage", 
+#define("SEARCH_STRATEGY_ATTRIBUTES", json_encode(array(0 =>  "leverage",
+#                                                       1 => "confidence",
+#						       2 => "support",
+#						       3 => "lhs_coverage",
 #						       4=> "lift")));
 
 define("RULE_HEADERS", json_encode(array("Rule ID", "Antecedent", "Consequent", "Antecedent Coverage %",

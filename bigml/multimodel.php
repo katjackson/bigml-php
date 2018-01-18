@@ -14,13 +14,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-if (!class_exists('bigml')) {
-   include('bigml.php');
-}
+namespace BigML;
 
-if (!class_exists('model')) {
-   include('model.php');
-}
+use BigML\BigML;
+use BigML\Model;
+use Exception;
 
 function read_votes($votes_files, $model, $data_locale=null)
 {

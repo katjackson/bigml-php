@@ -1,7 +1,10 @@
 <?php
+
+namespace BigML;
+
 /**
  * ProbabilityDistribution class
- * 
+ *
  * Parent class to all probability distributions.  Enforces a common interface
  * across subclasses and provides internal utility functions to them.
  */

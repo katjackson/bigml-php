@@ -14,32 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-function term_matches($text, $forms_list, $options) {
-  /*
-    Counts the number of occurences of the words in forms_list in the text
-    The terms in forms_list can either be tokens or full terms. The
-    matching for tokens is contains and for full terms is equals.
-  */
-
-  $token_mode = property_exists($options, 'token_mode') ? $options->token_mode : Predicate::TM_TOKENS;
-  $case_sensitive = property_exists($options, 'case_sensitive') ? $options->case_sensitive : false;
-  $first_term = $forms_list[0];
-
-  if ($token_mode == Predicate::TM_FULL_TERM) {
-     return full_term_match($text, $first_term, $case_sensitive);
-  }
-
-   # In token_mode='all' we will match full terms using equals and
-   # # tokens using contains
-
-   if ($token_mode == Predicate::TM_ALL && count($forms_list) == 1) {
-      if ( preg_match(Predicate::FULL_TERM_PATTERN, $first_term) ) {
-         return full_term_match($text, $first_term, $case_sensitive);
-      }
-   }
-
-  return term_matches_tokens($text, $forms_list, $case_sensitive);
-}
+namespace BigML;
 
 function term_matches_tokens($text, $forms_list, $case_sensitive) {
   /*
@@ -111,10 +86,6 @@ function plural($text, $num) {
    return $text . $num>1 ? 's' : '';
 }
 
-function endsWith( $str, $sub ) {
-    return ( substr( $str, strlen( $str ) - strlen( $sub ) ) == $sub );
-}
-
 function operatorFunction($operator) {
    static $OPERATOR;
    if (!isset($OPERATOR)) {
@@ -159,7 +130,7 @@ class Predicate {
          $this->value = $value;
          $this->term = $term;
 
-         if (endsWith($this->operator, "*") ) {
+         if (self::endsWith($this->operator, "*") ) {
             $this->operator = substr($this->operator, 0, -1);
             $this->missing = true;
          }
@@ -321,6 +292,37 @@ class Predicate {
      return rule;
    }
 
+    static function term_matches($text, $forms_list, $options)
+    {
+        /*
+        Counts the number of occurences of the words in forms_list in the text
+        The terms in forms_list can either be tokens or full terms. The
+        matching for tokens is contains and for full terms is equals.
+        */
+
+        $token_mode = property_exists($options, 'token_mode') ? $options->token_mode : Predicate::TM_TOKENS;
+        $case_sensitive = property_exists($options, 'case_sensitive') ? $options->case_sensitive : false;
+        $first_term = $forms_list[0];
+
+        if ($token_mode == Predicate::TM_FULL_TERM) {
+            return full_term_match($text, $first_term, $case_sensitive);
+        }
+
+        # In token_mode='all' we will match full terms using equals and
+        # # tokens using contains
+
+        if ($token_mode == Predicate::TM_ALL && count($forms_list) == 1) {
+            if (preg_match(Predicate::FULL_TERM_PATTERN, $first_term) ) {
+                return full_term_match($text, $first_term, $case_sensitive);
+            }
+        }
+
+        return term_matches_tokens($text, $forms_list, $case_sensitive);
+   }
+
+    static function endsWith($str, $sub) {
+        return (substr($str, strlen($str) - strlen($sub)) == $sub);
+    }
 }
 
 ?>

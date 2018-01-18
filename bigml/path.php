@@ -14,10 +14,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+namespace BigML;
+
+use Exception;
+
 function reverse($operator) {
     /*Reverses the unequality operators*/
     $REVERSE_OP = array('<' => '>', '>'=> '<');
-    return $REVERSE_OP[substr($operator, 0, 1)] . substr($operator, 1); 
+    return $REVERSE_OP[substr($operator, 0, 1)] . substr($operator, 1);
 
 }
 
