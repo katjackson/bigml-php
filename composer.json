@@ -7,8 +7,8 @@
     "wamania/php-stemmer": "~1.2"
   },
   "autoload": {
-    "psr-4": {
-      "BigML\\": "bigml/"
-    }
+    "classmap": [
+      "bigml/"
+    ]
   }
 }
