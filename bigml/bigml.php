@@ -2639,7 +2639,8 @@ class BigML {
 
          if (file_exists($stored_resource)) {
             $resource = json_decode(file_get_contents($stored_resource));
-            if (property_exists($resource, "object") && property_exists($resource->object, "status") && $resource->object->status->code != BigMLRequest::FINISHED ) {
+            $code = $resource->object->status->code ?? null;
+            if ($code != BigMLRequest::FINISHED) {
                # get resource again
                try {
                   $rest = new BigMLRequest('GET', $resource->resource);
